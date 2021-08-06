@@ -22,9 +22,7 @@ namespace BOMjak.Bot
         public Worker(ILogger<Worker> logger, IConfiguration configuration)
         {
             _logger = logger;
-            DiscordClient = new DiscordSocketClient(new DiscordSocketConfig
-            {
-            });
+            DiscordClient = new DiscordSocketClient();
 
             Token = configuration[TokenEnvironmentVariable];
 
@@ -39,12 +37,14 @@ namespace BOMjak.Bot
             {
                 try
                 {
-                    _logger.LogInformation("Getting wojak");
-                    var wojakTask = WojakManager.GetCurrentAsync();
+                    var locationCode = Core.Model.LocationCode.IDR023;
+                    _logger.LogInformation($"Getting BOMjak for {locationCode}");
+                    var manager = new BOMJakManager(locationCode);
+                    var wojakTask = manager.CreateStaticAsync();
                     await sourceChannel.SendMessageAsync("Let me get that for you");
                     var wojak = await wojakTask;
-                    _logger.LogInformation("Wojak generated, sending now.");
-                    await sourceChannel.SendFileAsync(wojak, $"BOMjak.{DateTime.Now.Ticks}.png", string.Empty);
+                    _logger.LogInformation("BOMjak generated, sending now.");
+                    await sourceChannel.SendFileAsync(wojak, $"{locationCode}.{DateTime.Now.Ticks}.png", string.Empty);
                 }
                 catch (Exception ex)
                 {

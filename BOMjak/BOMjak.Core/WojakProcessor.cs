@@ -16,13 +16,16 @@ namespace BOMjak.Core
         private const int TransparencyOffsetY = 20;
         private const string ForegroundPath = "Resources/foreground.png";
 
-        public static async Task CreateAsync(IEnumerable<string> layerPaths, string outputPath)
+        public const int ImageWidth = 800;
+        public const int ImageHeight = 633;
+
+        public static async Task<Image> CreateImageAsync(IEnumerable<string> layerPaths)
         {
             using var foreground = await Image.LoadAsync<Rgba32>(ForegroundPath);
 
             var layerImages = await Task.WhenAll(layerPaths.Select((layerPath) => Image.LoadAsync<Rgba32>(layerPath)));
 
-            using var result = new Image<Rgba32>(800, 633, Rgba32.ParseHex("fff"));
+            var result = new Image<Rgba32>(ImageWidth, ImageHeight, Rgba32.ParseHex("fff"));
 
             result.Mutate((ctx) =>
             {
@@ -38,9 +41,9 @@ namespace BOMjak.Core
             });
 
 
-            await result.SaveAsync(outputPath);
-
             foreach (var layerImage in layerImages) layerImage.Dispose();
+
+            return result;
         }
     }
 }

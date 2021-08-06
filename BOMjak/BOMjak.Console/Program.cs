@@ -13,24 +13,9 @@ namespace BOMjak.Console
         {
             Directory.Delete("img", true);
 
-            var client = new BOMClient(new BOMClient.Settings
-            {
-                RadarUrl = "ftp://ftp.bom.gov.au/anon/gen/radar",
-                RadarTransparenciesUrl = "ftp://ftp.bom.gov.au/anon/gen/radar_transparencies",
-                WorkingDirectory = "img"
-            });
+            var manager = new BOMJakManager(Core.Model.LocationCode.IDR023);
 
-            var result = new List<string>();
-            result.AddRange(await client.DownloadRadarTransparencies(Core.Model.LocationCode.IDR023));
-
-            var radarOverlays = await client.GetRadarOverlaysByLocationCodeAsync(Core.Model.LocationCode.IDR023, 1);
-
-            foreach (var file in radarOverlays)
-            {
-                result.Add(await client.DownloadRadarOverlay(file));
-            }
-
-            await WojakProcessor.CreateAsync(result, "img/test.png");
+            await (await manager.CreateAnimatedAsync()).DisposeAsync();
         }
     }
 }

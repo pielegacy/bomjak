@@ -18,7 +18,7 @@ namespace BOMjak.Function
 
             response.Headers.Add("Content-Type", "image/png");
 
-            using (var stream = await WojakManager.GetCurrentAsync())
+            using (var stream = await BOMJakManager.GetCurrentAsync())
             {
                 stream.CopyTo(response.Body);
             }

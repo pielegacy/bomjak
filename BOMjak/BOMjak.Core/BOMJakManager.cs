@@ -14,7 +14,7 @@ namespace BOMjak.Core
 {
     public class BOMJakManager
     {
-        private const int CacheDurationMinutes = 30;
+        private const int CacheDurationMinutes = 15;
 
         public LocationCode LocationCode { get; }
         public string ImagePathStatic { get; }

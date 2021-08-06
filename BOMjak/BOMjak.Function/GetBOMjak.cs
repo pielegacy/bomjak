@@ -18,7 +18,7 @@ namespace BOMjak.Function
 
             response.Headers.Add("Content-Type", "image/png");
 
-            using (var stream = await WojakManager.GetCurrentAsync())
+            using (var stream = await new BOMJakManager(Core.Model.LocationCode.IDR023).CreateAnimatedAsync())
             {
                 stream.CopyTo(response.Body);
             }

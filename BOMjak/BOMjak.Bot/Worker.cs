@@ -1,4 +1,4 @@
-using BOMjak.Core;
+﻿using BOMjak.Core;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -16,13 +16,23 @@ namespace BOMjak.Bot
         private const string TokenEnvironmentVariable = "BOMJAK_BOT_TOKEN";
         private readonly ILogger<Worker> _logger;
 
-        public DiscordSocketClient DiscordClient { get; }
+        private readonly string[] _possibleResponses = new string[]
+        {
+            "ok...",
+            "👍"
+        };
+
+        private string Response => _possibleResponses[Random.Next(_possibleResponses.Length)];
+
+        private DiscordSocketClient DiscordClient { get; }
+        private Random Random { get; }
         private string Token { get; }
 
         public Worker(ILogger<Worker> logger, IConfiguration configuration)
         {
             _logger = logger;
             DiscordClient = new DiscordSocketClient();
+            Random = new Random();
 
             Token = configuration[TokenEnvironmentVariable];
 
@@ -40,11 +50,11 @@ namespace BOMjak.Bot
                     var locationCode = Core.Model.LocationCode.IDR023;
                     _logger.LogInformation($"Getting BOMjak for {locationCode}");
                     var manager = new BOMJakManager(locationCode);
-                    var wojakTask = manager.CreateStaticAsync();
-                    await sourceChannel.SendMessageAsync("Let me get that for you");
+                    var wojakTask = manager.CreateAnimatedAsync();
+                    await sourceChannel.SendMessageAsync(Response);
                     var wojak = await wojakTask;
                     _logger.LogInformation("BOMjak generated, sending now.");
-                    await sourceChannel.SendFileAsync(wojak, $"{locationCode}.{DateTime.Now.Ticks}.png", string.Empty);
+                    await sourceChannel.SendFileAsync(wojak, $"{locationCode}.{DateTime.Now.Ticks}.gif", string.Empty);
                 }
                 catch (Exception ex)
                 {

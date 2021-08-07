@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace BOMjak.Core
 {
-    public class WojakProcessor
+    public static class WojakFactory
     {
         private const int TransparencySize = 384;
         private const int TransparencyOffsetX = 140;
@@ -19,7 +19,7 @@ namespace BOMjak.Core
         public const int ImageWidth = 800;
         public const int ImageHeight = 633;
 
-        public static async Task<Image> CreateImageAsync(IEnumerable<string> layerPaths)
+        public static async Task<Image> CreateImageDefaultAsync(IEnumerable<string> layerPaths)
         {
             using var foreground = await Image.LoadAsync<Rgba32>(ForegroundPath);
 
@@ -44,6 +44,35 @@ namespace BOMjak.Core
             foreach (var layerImage in layerImages) layerImage.Dispose();
 
             return result;
+        }
+
+        public static async Task<Image> CreateImageDynamicAsync(string layerPath)
+        {
+            using var foreground = await Image.LoadAsync<Rgba32>(ForegroundPath);
+            using var layerImage = await Image.LoadAsync<Rgba32>(layerPath);
+
+            var result = new Image<Rgba32>(ImageWidth, ImageHeight, Rgba32.ParseHex("fff"));
+
+            result.Mutate((ctx) =>
+            {
+                layerImage.Mutate((lCtx) =>
+                {
+                    lCtx.ResizeToTransparency(layerImage);
+                });
+                ctx.DrawImage(layerImage, new Point(TransparencyOffsetX, TransparencyOffsetY), 1);
+
+                ctx.DrawImage(foreground, 1);
+            });
+
+            return result;
+        }
+
+        private static IImageProcessingContext ResizeToTransparency(this IImageProcessingContext ctx, IImage image)
+        {
+            double scale = (double)TransparencySize / (double)image.Width;
+            double newHeight = image.Height * scale;
+
+            return ctx.Resize(TransparencySize, (int)Math.Round(newHeight));
         }
     }
 }

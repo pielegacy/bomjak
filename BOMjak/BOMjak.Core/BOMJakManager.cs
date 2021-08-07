@@ -28,6 +28,17 @@ namespace BOMjak.Core
             ImagePathAnimated = $"{PathBase}/{locationCode}.gif";
         }
 
+        public async Task<Stream> CreateCustomAsync(string filePath)
+        {
+            using var image = await WojakFactory.CreateImageDynamicAsync(filePath);
+
+            var stream = new MemoryStream();
+            await image.SaveAsPngAsync(stream);
+            stream.Seek(0, SeekOrigin.Begin);
+
+            return stream;
+        }
+
         public async Task<Stream> CreateStaticAsync()
         {
             if (!File.Exists(ImagePathStatic) || File.GetCreationTimeUtc(ImagePathStatic) < DateTime.UtcNow.AddMinutes(-1 * CacheDurationMinutes))
@@ -49,7 +60,7 @@ namespace BOMjak.Core
                     result.Add(await client.DownloadRadarOverlay(file));
                 }
 
-                using var image = await WojakProcessor.CreateImageAsync(result);
+                using var image = await WojakFactory.CreateImageDefaultAsync(result);
                 await image.SaveAsync(ImagePathStatic);
             }
 
@@ -72,12 +83,12 @@ namespace BOMjak.Core
 
                 var radarOverlays = await client.GetRadarOverlaysByLocationCodeAsync(LocationCode, 6);
 
-                var image = new Image<Rgba32>(WojakProcessor.ImageWidth, WojakProcessor.ImageHeight);
+                var image = new Image<Rgba32>(WojakFactory.ImageWidth, WojakFactory.ImageHeight);
 
                 foreach (var file in radarOverlays)
                 {
                     var frameLayers = transparencies.Concat(new[] { await client.DownloadRadarOverlay(file) });
-                    using var frameImage = await WojakProcessor.CreateImageAsync(frameLayers);
+                    using var frameImage = await WojakFactory.CreateImageDefaultAsync(frameLayers);
                     var newFrame = image.Frames.AddFrame(frameImage.Frames[0]);
                     newFrame.Metadata.GetGifMetadata().FrameDelay = 100;
                 }

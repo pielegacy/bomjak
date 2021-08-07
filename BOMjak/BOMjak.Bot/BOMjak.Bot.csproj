@@ -7,12 +7,16 @@
   <ItemGroup>
     <None Remove="Resources\background.png" />
     <None Remove="Resources\foreground.png" />
+    <None Remove="Resources\help.md" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Resources\background.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Resources\foreground.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\help.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

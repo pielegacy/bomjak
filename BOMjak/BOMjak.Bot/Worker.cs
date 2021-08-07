@@ -32,7 +32,10 @@ namespace BOMjak.Bot
         private HttpClient HttpClient { get; }
         private Random Random { get; }
         private string Token { get; }
+        public string HelpText { get; }
+        private List<ProcessorDelegate> Processors { get; }
 
+        private delegate Task<bool> ProcessorDelegate(string text, SocketMessage arg, ISocketMessageChannel channel);
 
         public Worker(ILogger<Worker> logger, IConfiguration configuration)
         {
@@ -42,8 +45,16 @@ namespace BOMjak.Bot
             Random = new Random();
 
             Token = configuration[TokenEnvironmentVariable];
+            HelpText = File.ReadAllText(configuration["Resources:HelpFile"]);
 
             DiscordClient.MessageReceived += MessageReceived;
+            Processors = new List<ProcessorDelegate>
+            {
+                TryProcessHelpAsync,
+                TryProcessCustomAsync,
+                TryProcessLastAsync,
+                TryProcessStandardAsync
+            };
         }
 
         private async Task MessageReceived(SocketMessage arg)
@@ -56,9 +67,15 @@ namespace BOMjak.Bot
                     var messageText = arg.Content.ToLower().Trim();
                     if (!messageText.StartsWith("bomjak")) return;
 
-                    if (await TryProcessCustomAsync(messageText, arg, sourceChannel)) return;
-                    if (await TryProcessLastAsync(messageText, arg, sourceChannel)) return;
-                    if (await TryProcessStandardAsync(messageText, arg, sourceChannel)) return;
+                    foreach (var processor in Processors)
+                    {
+                        if (await processor(messageText, arg, sourceChannel)) return;
+                    }
+
+                    //if (await TryProcessHelpAsync(messageText, arg, sourceChannel)) return;
+                    //if (await TryProcessCustomAsync(messageText, arg, sourceChannel)) return;
+                    //if (await TryProcessLastAsync(messageText, arg, sourceChannel)) return;
+                    //if (await TryProcessStandardAsync(messageText, arg, sourceChannel)) return;
                 }
                 catch (Exception ex)
                 {
@@ -161,6 +178,13 @@ namespace BOMjak.Bot
             var wojak = await wojakTask;
             _logger.LogInformation("BOMjak generated, sending now.");
             await channel.SendFileAsync(wojak, $"{locationCode}.{DateTime.Now.Ticks}.gif", string.Empty);
+            return true;
+        }
+
+        private async Task<bool> TryProcessHelpAsync(string text, SocketMessage arg, ISocketMessageChannel channel)
+        {
+            if (!text.Contains("help")) return false;
+            await channel.SendMessageAsync(HelpText);
             return true;
         }
 

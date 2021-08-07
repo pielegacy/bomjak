@@ -43,7 +43,7 @@ namespace BOMjak.Bot
         {
             _logger.LogInformation(arg.Content);
             if (DiscordClient.GetChannel(arg.Channel.Id) is SocketTextChannel sourceChannel
-                && arg.Content.ToLower().Contains("bomjak"))
+                && arg.Content.ToLower().StartsWith("bomjak"))
             {
                 try
                 {

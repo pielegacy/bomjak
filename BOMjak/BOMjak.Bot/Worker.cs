@@ -71,11 +71,6 @@ namespace BOMjak.Bot
                     {
                         if (await processor(messageText, arg, sourceChannel)) return;
                     }
-
-                    //if (await TryProcessHelpAsync(messageText, arg, sourceChannel)) return;
-                    //if (await TryProcessCustomAsync(messageText, arg, sourceChannel)) return;
-                    //if (await TryProcessLastAsync(messageText, arg, sourceChannel)) return;
-                    //if (await TryProcessStandardAsync(messageText, arg, sourceChannel)) return;
                 }
                 catch (Exception ex)
                 {

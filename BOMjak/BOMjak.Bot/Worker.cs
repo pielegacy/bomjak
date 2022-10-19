@@ -16,6 +16,13 @@ namespace BOMjak.Bot
 {
     public class Worker : BackgroundService
     {
+        private const string LEGACY_PREFIX = "bomjak";
+        private const string NEW_PREFIX = "bureaujak";
+        private readonly string[] _prefixes = new[]
+        {
+            LEGACY_PREFIX,
+            NEW_PREFIX,
+        };
         private const string TokenEnvironmentVariable = "BOMJAK_BOT_TOKEN";
         private const int AttachmentScanMaximum = 5;
         private readonly ILogger<Worker> _logger;
@@ -65,7 +72,12 @@ namespace BOMjak.Bot
                 try
                 {
                     var messageText = arg.Content.ToLower().Trim();
-                    if (!messageText.StartsWith("bomjak")) return;
+                    if (!_prefixes.Any(prefix => messageText.StartsWith(prefix))) return;
+
+                    if (messageText.StartsWith(LEGACY_PREFIX))
+                    {
+                        _ = sourceChannel.SendMessageAsync($"I'LL HELP YOU OUT DOG BUT THE NAME'S `{NEW_PREFIX}` NOW...");
+                    }
 
                     foreach (var processor in Processors)
                     {

@@ -8,4 +8,4 @@ An incredibly unfunny service that will make zoomer humour out of the weather.
 
 This bot is not a shining example of perfect code but I have decided to make it public as it has been running for two years without a hitch.
 
-The main goal with BOMJAK was to create a powerful tool for unfunny Diacord shenanigans however as time has gone on it has proven a viable stand in for the Bureau's weather radar.
+The main goal with BOMJAK was to create a powerful tool for unfunny Discord shenanigans however as time has gone on it has proven a viable stand in for the Bureau's weather radar.

@@ -1,14 +1,11 @@
 ﻿using BOMjak.Core.Model;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats;
-using SixLabors.ImageSharp.Formats.Gif;
-using SixLabors.ImageSharp.PixelFormats;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace BOMjak.Core
 {
@@ -41,7 +38,8 @@ namespace BOMjak.Core
 
         public async Task<Stream> CreateStaticAsync()
         {
-            if (!File.Exists(ImagePathStatic) || File.GetCreationTimeUtc(ImagePathStatic) < DateTime.UtcNow.AddMinutes(-1 * CacheDurationMinutes))
+            if (!File.Exists(ImagePathStatic) || File.GetCreationTimeUtc(ImagePathStatic) <
+                DateTime.UtcNow.AddMinutes(-1 * CacheDurationMinutes))
             {
                 var client = new BOMClient(new BOMClient.Settings
                 {
@@ -69,7 +67,8 @@ namespace BOMjak.Core
 
         public async Task<Stream> CreateAnimatedAsync()
         {
-            if (!File.Exists(ImagePathAnimated) || File.GetCreationTimeUtc(ImagePathAnimated) < DateTime.UtcNow.AddMinutes(-1 * CacheDurationMinutes))
+            if (!File.Exists(ImagePathAnimated) || File.GetCreationTimeUtc(ImagePathAnimated) <
+                DateTime.UtcNow.AddMinutes(-1 * CacheDurationMinutes))
             {
                 var client = new BOMClient(new BOMClient.Settings
                 {

@@ -4,7 +4,6 @@ using SixLabors.ImageSharp.Processing;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace BOMjak.Core
@@ -57,10 +56,10 @@ namespace BOMjak.Core
 
             var result = new Image<Rgba32>(ImageWidth, ImageHeight, Rgba32.ParseHex("fff"));
 
-            result.Mutate((ctx) =>
+            result.Mutate<Rgba32>((ctx) =>
             {
                 ctx.DrawImage(background, 1);
-                layerImage.Mutate((lCtx) =>
+                layerImage.Mutate<Rgba32>((lCtx) =>
                 {
                     lCtx.ResizeToTransparency(layerImage);
                 });
@@ -72,7 +71,7 @@ namespace BOMjak.Core
             return result;
         }
 
-        private static IImageProcessingContext ResizeToTransparency(this IImageProcessingContext ctx, IImage image)
+        private static IImageProcessingContext ResizeToTransparency(this IImageProcessingContext ctx, Image<Rgba32> image)
         {
             double scale = (double)TransparencySize / (double)image.Width;
             double newHeight = image.Height * scale;

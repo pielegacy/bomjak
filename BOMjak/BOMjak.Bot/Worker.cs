@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -64,14 +65,14 @@ namespace BOMjak.Bot
             };
         }
 
-        private async Task MessageReceived(SocketMessage arg)
+        private async Task MessageReceived(SocketMessage message)
         {
-            _logger.LogInformation(arg.Content);
-            if (DiscordClient.GetChannel(arg.Channel.Id) is ISocketMessageChannel sourceChannel)
+            _logger.LogInformation(JsonSerializer.Serialize(message));
+            if (DiscordClient.GetChannel(message.Channel.Id) is ISocketMessageChannel sourceChannel)
             {
                 try
                 {
-                    var messageText = arg.Content.ToLower().Trim();
+                    var messageText = message.Content.ToLower().Trim();
                     if (!_prefixes.Any(prefix => messageText.StartsWith(prefix))) return;
 
                     if (messageText.StartsWith(LEGACY_PREFIX))
@@ -81,7 +82,7 @@ namespace BOMjak.Bot
 
                     foreach (var processor in Processors)
                     {
-                        if (await processor(messageText, arg, sourceChannel)) return;
+                        if (await processor(messageText, message, sourceChannel)) return;
                     }
                 }
                 catch (Exception ex)
@@ -140,7 +141,7 @@ namespace BOMjak.Bot
 
                 var lastAttachment = messages
                     .OrderByDescending(message => message.CreatedAt)
-                    .Select(message => GetImageAttachment(message))
+                    .Select(GetImageAttachment)
                     .FirstOrDefault(attachment => attachment != null);
 
                 if (lastAttachment is null)

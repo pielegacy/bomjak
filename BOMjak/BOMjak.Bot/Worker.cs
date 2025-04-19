@@ -19,11 +19,13 @@ namespace BOMjak.Bot
     {
         private const string LEGACY_PREFIX = "bomjak";
         private const string NEW_PREFIX = "bureaujak";
+
         private readonly string[] _prefixes = new[]
         {
             LEGACY_PREFIX,
             NEW_PREFIX,
         };
+
         private const string TokenEnvironmentVariable = "BOMJAK_BOT_TOKEN";
         private const int AttachmentScanMaximum = 5;
         private readonly ILogger<Worker> _logger;
@@ -43,32 +45,36 @@ namespace BOMjak.Bot
         public string HelpText { get; }
         private List<ProcessorDelegate> Processors { get; }
 
-        private delegate Task<bool> ProcessorDelegate(string text, SocketMessage arg, ISocketMessageChannel channel);
+        private delegate Task<bool> ProcessorDelegate(string text, SocketMessage arg, IMessageChannel channel);
 
         public Worker(ILogger<Worker> logger, IConfiguration configuration)
         {
             _logger = logger;
-            DiscordClient = new DiscordSocketClient();
+            DiscordClient = new DiscordSocketClient(
+                new()
+                {
+                    GatewayIntents = GatewayIntents.MessageContent,
+                    MessageCacheSize = 1000
+                });
             HttpClient = new HttpClient();
             Random = new Random();
 
             Token = configuration[TokenEnvironmentVariable];
             HelpText = File.ReadAllText(configuration["Resources:HelpFile"]);
-
-            DiscordClient.MessageReceived += MessageReceived;
-            Processors = new List<ProcessorDelegate>
-            {
+            
+            Processors =
+            [
                 TryProcessHelpAsync,
                 TryProcessCustomAsync,
                 TryProcessLastAsync,
                 TryProcessStandardAsync
-            };
+            ];
         }
 
         private async Task MessageReceived(SocketMessage message)
         {
             _logger.LogInformation(JsonSerializer.Serialize(message));
-            if (DiscordClient.GetChannel(message.Channel.Id) is ISocketMessageChannel sourceChannel)
+            if (message.Channel is IMessageChannel messageChannel)
             {
                 try
                 {
@@ -77,23 +83,24 @@ namespace BOMjak.Bot
 
                     if (messageText.StartsWith(LEGACY_PREFIX))
                     {
-                        _ = sourceChannel.SendMessageAsync($"I'LL HELP YOU OUT DOG BUT THE NAME'S `{NEW_PREFIX}` NOW...");
+                        await messageChannel.SendMessageAsync(
+                            $"I'LL HELP YOU OUT DOG BUT THE NAME'S `{NEW_PREFIX}` NOW...");
                     }
 
                     foreach (var processor in Processors)
                     {
-                        if (await processor(messageText, message, sourceChannel)) return;
+                        if (await processor(messageText, message, messageChannel)) return;
                     }
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Wojak generation failed");
-                    await sourceChannel.SendMessageAsync("Something went wrong, please try again later");
+                    await messageChannel.SendMessageAsync("Something went wrong, please try again later");
                 }
             }
         }
 
-        private async Task<bool> TryProcessCustomAsync(string text, SocketMessage arg, ISocketMessageChannel channel)
+        private async Task<bool> TryProcessCustomAsync(string text, SocketMessage arg, IMessageChannel channel)
         {
             var imageAttachment = GetImageAttachment(arg);
             if (imageAttachment is null) return false;
@@ -109,6 +116,7 @@ namespace BOMjak.Bot
                 {
                     await response.Content.CopyToAsync(fileStream);
                 }
+
                 var wojakTask = manager.CreateCustomAsync(tempFile);
                 await channel.SendMessageAsync(Response);
                 var wojak = await wojakTask;
@@ -130,7 +138,7 @@ namespace BOMjak.Bot
             }
         }
 
-        private async Task<bool> TryProcessLastAsync(string messageText, SocketMessage arg, ISocketMessageChannel channel)
+        private async Task<bool> TryProcessLastAsync(string messageText, SocketMessage arg, IMessageChannel channel)
         {
             if (!messageText.Contains("last")) return false;
 
@@ -158,6 +166,7 @@ namespace BOMjak.Bot
                 {
                     await response.Content.CopyToAsync(fileStream);
                 }
+
                 var wojakTask = manager.CreateCustomAsync(tempFile);
                 await channel.SendMessageAsync(Response);
                 var wojak = await wojakTask;
@@ -176,7 +185,7 @@ namespace BOMjak.Bot
             }
         }
 
-        private async Task<bool> TryProcessStandardAsync(string text, SocketMessage arg, ISocketMessageChannel channel)
+        private async Task<bool> TryProcessStandardAsync(string text, SocketMessage arg, IMessageChannel channel)
         {
             var locationCode = Core.Model.LocationCode.IDR023;
             _logger.LogInformation($"Getting BOMjak for {locationCode}");
@@ -189,14 +198,15 @@ namespace BOMjak.Bot
             return true;
         }
 
-        private async Task<bool> TryProcessHelpAsync(string text, SocketMessage arg, ISocketMessageChannel channel)
+        private async Task<bool> TryProcessHelpAsync(string text, SocketMessage arg, IMessageChannel channel)
         {
             if (!text.Contains("help")) return false;
             await channel.SendMessageAsync(HelpText);
             return true;
         }
 
-        private static IAttachment GetImageAttachment(IMessage arg) => arg?.Attachments.FirstOrDefault(a => a.Width.HasValue);
+        private static IAttachment GetImageAttachment(IMessage arg) =>
+            arg?.Attachments.FirstOrDefault(a => a.Width.HasValue);
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
@@ -206,8 +216,13 @@ namespace BOMjak.Bot
 
                 await DiscordClient.LoginAsync(Discord.TokenType.Bot, Token);
                 await DiscordClient.StartAsync();
-
-                _logger.LogInformation("BOMjak connected");
+                
+                DiscordClient.MessageReceived += MessageReceived;
+                DiscordClient.Ready += () =>
+                {
+                    _logger.LogInformation("BOMjak connected");
+                    return Task.CompletedTask;
+                };
 
                 await Task.Delay(Timeout.Infinite, stoppingToken);
             }

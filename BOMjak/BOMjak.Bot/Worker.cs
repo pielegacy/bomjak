@@ -20,21 +20,21 @@ namespace BOMjak.Bot
         private const string LEGACY_PREFIX = "bomjak";
         private const string NEW_PREFIX = "bureaujak";
 
-        private readonly string[] _prefixes = new[]
-        {
+        private readonly string[] _prefixes =
+        [
             LEGACY_PREFIX,
-            NEW_PREFIX,
-        };
+            NEW_PREFIX
+        ];
 
         private const string TokenEnvironmentVariable = "BOMJAK_BOT_TOKEN";
         private const int AttachmentScanMaximum = 5;
         private readonly ILogger<Worker> _logger;
 
-        private readonly string[] _possibleResponses = new string[]
-        {
+        private readonly string[] _possibleResponses =
+        [
             "ok...",
             "👍"
-        };
+        ];
 
         private string Response => _possibleResponses[Random.Next(_possibleResponses.Length)];
 
@@ -42,7 +42,7 @@ namespace BOMjak.Bot
         private HttpClient HttpClient { get; }
         private Random Random { get; }
         private string Token { get; }
-        public string HelpText { get; }
+        private string HelpText { get; }
         private List<ProcessorDelegate> Processors { get; }
 
         private delegate Task<bool> ProcessorDelegate(string text, SocketMessage arg, IMessageChannel channel);
@@ -51,7 +51,7 @@ namespace BOMjak.Bot
         {
             _logger = logger;
             DiscordClient = new DiscordSocketClient(
-                new()
+                new DiscordSocketConfig
                 {
                     GatewayIntents = GatewayIntents.MessageContent,
                     MessageCacheSize = 1000
@@ -73,7 +73,7 @@ namespace BOMjak.Bot
 
         private async Task MessageReceived(SocketMessage message)
         {
-            _logger.LogInformation(JsonSerializer.Serialize(message));
+            _logger.LogInformation("Message Payload: {Message}", JsonSerializer.Serialize(message));
             if (message.Channel is IMessageChannel messageChannel)
             {
                 try
@@ -112,7 +112,7 @@ namespace BOMjak.Bot
                 _logger.LogInformation($"Getting custom BOMjak for {sourceUrl}");
                 var manager = new BOMJakManager(0);
                 var response = await HttpClient.GetAsync(sourceUrl);
-                using (var fileStream = File.OpenWrite(tempFile))
+                await using (var fileStream = File.OpenWrite(tempFile))
                 {
                     await response.Content.CopyToAsync(fileStream);
                 }
